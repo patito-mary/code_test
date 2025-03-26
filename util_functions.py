@@ -7,57 +7,39 @@ def dictionary_select_items(x, ind):
         z[i]=x[i][ind]
     z['count']= np.size(np.where(ind))
     return z
-
-def select_halos_within_3r200(Halos_cat, Halos_limits, Header, n_R200, particle, N, basePath):
+def select_halos(Halos_cat, Halos_limits):
     """
-    Selecciona particulas de los halos que cumplen con los límites de masa y están dentro de 3 R200
-    respecto al centro de masas del halo.
+    Selecciona halos que cumplen con los límites especificados.
     
     Parámetros:
     - Halos_cat: Catálogo de halos.
-    - n_R200: En R200, distancia al CM del grupo de cada particula
+    - Halos_limits: Diccionario con límites para las propiedades de los halos.
     
     Retorna:
-    - selected_halos: Un array booleano que indica qué halos cumplen las condiciones.
+    - selected_halos: Array booleano que indica qué halos cumplen con los límites.
     """
+    selected_halos = np.ones(len(Halos_cat['Group_R_Crit200']), dtype=bool)  # Inicializar con todos los halos seleccionados
     
-    # Selección inicial basada en la masa (Group_M_Crit200)
-    selected_halos = np.logical_and(
-        Halos_cat['Group_M_Crit200'] >= Halos_limits["Group_M_Crit200"][0],
-        Halos_cat['Group_M_Crit200'] <= Halos_limits["Group_M_Crit200"][1]
-    )
-
-    for_nR200_coords = []
-    all_fof_coords = []
-    halo_id = []
+    for i in Halos_limits.keys():
+        aux_key = i.split('/')
+        if np.size(aux_key) == 1:
+            selected_halos = np.logical_and(
+                selected_halos,
+                np.logical_and(
+                    Halos_cat[i] >= Halos_limits[i][0],
+                    Halos_cat[i] <= Halos_limits[i][1]
+                )
+            )
+        else:
+            selected_halos = np.logical_and(
+                selected_halos,
+                np.logical_and(
+                    Halos_cat[aux_key[0]][:, int(aux_key[1])] >= Halos_limits[i][0],
+                    Halos_cat[aux_key[0]][:, int(aux_key[1])] <= Halos_limits[i][1]
+                )
+            )
     
-    gas_particles = {}
-    
-    for halo in np.where(selected_halos)[0]:
-        print(f'loading data for halo: {halo} . . .')
-        # Obtener la posición del halo principal (asumimos que es el primer halo en el catálogo)
-        halo_cm_pos = Halos_cat['GroupCM'][halo]/Header['HubbleParam']
-        halo_r200 = Halos_cat['Group_R_Crit200'][halo]/Header['HubbleParam']
-        particle_gas = il.snapshot.loadHalo(basePath, N, id=halo, partType=particle, fields=['Masses','Coordinates'])
-        gas_pos = particle_gas['Coordinates']/Header['HubbleParam']
-        # Calcular la distancia de todas las particulas del fof al CM halo
-        dist_to_principal = Distance_3D_to_1D(gas_pos, halo_cm_pos, Header['BoxSize'])
-        norm_dist = dist_to_principal/halo_r200
-        
-        mask_NR200 = np.where(norm_dist <= n_R200)[0]
-        use_gas = gas_pos[mask_NR200]
-
-        if halo not in gas_particles:
-            gas_particles[halo] = {}
-
-        gas_particles[halo]['inside_3R200'] = use_gas
-        gas_particles[halo]['all_fof'] = dictionary_select_items(particle_gas, mask_NR200)
-
-        # Release memory for this halo
-        del halo_cm_pos, halo_r200, particle_gas, gas_pos, dist_to_principal, norm_dist, mask_NR200, use_gas
-
-    return gas_particles
-
+    return selected_halos
 
 def select_particles_in_halos(Halos_cat, Particles_cat, Halos_limits, r_multiplier=3.0):
     """
