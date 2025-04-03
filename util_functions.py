@@ -154,3 +154,32 @@ def calculate_halo_offsets(halos_data, box_size):
         raise TypeError("halos_data must be a pandas DataFrame or a dictionary-like object.")
 
     return updated_halos_data
+
+
+def merge_halo_dicts(dict1, dict2):
+    """
+    Une dos diccionarios de halos concatenando sus arrays y listas
+    
+    Parámetros:
+    - dict1: Primer diccionario de halos
+    - dict2: Segundo diccionario de halos
+    
+    Retorna:
+    - merged_dict: Diccionario combinado
+    """
+    merged_dict = {}
+    
+    for key in dict1.keys():
+        if key == 'count':
+            merged_dict[key] = dict1[key] + dict2[key]
+        elif isinstance(dict1[key], list):
+            # Para listas (como GroupSZPos)
+            merged_dict[key] = dict1[key] + dict2[key]
+        elif isinstance(dict1[key], np.ndarray):
+            # Para arrays numpy
+            merged_dict[key] = np.concatenate((dict1[key], dict2[key]))
+        else:
+            # Para otros tipos (no debería haber en este caso)
+            merged_dict[key] = [dict1[key], dict2[key]]
+    
+    return merged_dict
