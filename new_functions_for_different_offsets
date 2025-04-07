@@ -1,0 +1,24 @@
+NFS_1_offset_05 = []
+NFS_1_offset_1 = []
+NFS_1_offset_2 = []
+NFS_1_offset_3 = []
+
+for i in range(len(group_index_NFS_1)):
+    group = group_index_NFS_1.iloc[i]
+    a = np.where(group == data_structures_1['halo_id'])[0]
+    shift_05 = data_structures_1['offset_in05'][a]
+    shift_1 = data_structures_1['offset_in1'][a]
+    shift_2 = data_structures_1['offset_in2'][a]
+    shift_3 = data_structures_1['offset_in3'][a]
+    NFS_1_offset_05.append((shift_05[0]))
+    NFS_1_offset_1.append((shift_1[0]))
+    NFS_1_offset_2.append((shift_2[0]))
+    NFS_1_offset_3.append((shift_3[0]))
+
+NFS_1_offset_dataframe['group_index'] = group_index_NFS_1
+NFS_1_offset_dataframe['offset_05'] = NFS_1_offset_05
+NFS_1_offset_dataframe['offset_1'] = NFS_1_offset_1
+NFS_1_offset_dataframe['offset_2'] = NFS_1_offset_2
+NFS_1_offset_dataframe['offset_3'] = NFS_1_offset_3
+NFS_1_offset_dataframe['state'] = 'NFS'
+#NFS_1_offset_dataframe.set_index(group_index_NFS_1, inplace=True)
